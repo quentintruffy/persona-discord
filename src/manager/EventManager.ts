@@ -1,35 +1,63 @@
+/**
+ * Gestionnaire d'événements pour un bot Discord
+ * Ce module gère le chargement dynamique et l'exécution des gestionnaires d'événements
+ */
 import { ClientEvents, Collection } from "discord.js";
 import { readdirSync } from "fs";
 import { join } from "path";
 import DiscordClient from "../client/DiscordClient";
 
+/**
+ * Interface définissant la structure d'un gestionnaire d'événement Discord
+ * @template K - Type d'événement Discord
+ */
 export type IEvent<K extends keyof ClientEvents> = {
+  /** Nom de l'événement à écouter */
   name: K;
+
+  /** Si true, l'événement ne sera déclenché qu'une seule fois */
   once?: boolean;
+
+  /** Fonction exécutée lorsque l'événement est déclenché */
   execute: (
     client: DiscordClient,
     ...args: ClientEvents[K]
   ) => Promise<void> | void;
 };
 
+/**
+ * Gère le chargement et l'exécution des gestionnaires d'événements du bot
+ */
 export class EventManager {
+  /** Instance du client Discord */
   private readonly client: DiscordClient;
+
+  /** Chemin vers le dossier des événements */
   private readonly eventsPath: string;
+
+  /** Collection des événements chargés */
   private readonly events: Collection<string, IEvent<keyof ClientEvents>>;
 
-  constructor(client: DiscordClient) {
+  /**
+   * Crée une nouvelle instance du gestionnaire d'événements
+   * @param client - Le client Discord auquel ce gestionnaire est associé
+   * @param customPath - Chemin personnalisé vers les événements (optionnel)
+   */
+  constructor(client: DiscordClient, customPath?: string) {
     this.client = client;
-    this.eventsPath = join(process.cwd(), "src/events");
+    this.eventsPath = customPath || join(process.cwd(), "src/events");
     this.events = new Collection();
   }
 
   /**
-   * Charge tous les événements
+   * Charge tous les gestionnaires d'événements depuis le dossier configuré
    */
   public async loadEvents(): Promise<void> {
     try {
+      // Récupérer tous les fichiers d'événements
       const eventFiles = this.getEventFiles();
 
+      // Charger les événements
       for (const file of eventFiles) {
         await this.loadEvent(file);
       }
@@ -41,16 +69,25 @@ export class EventManager {
   }
 
   /**
-   * Obtient la liste des fichiers d'événements
+   * Récupère les fichiers d'événements depuis le dossier configuré
+   * @returns Liste des fichiers d'événements
    */
   private getEventFiles(): string[] {
-    return readdirSync(this.eventsPath).filter(
-      (file) => file.endsWith(".js") || file.endsWith(".ts")
-    );
+    try {
+      return readdirSync(this.eventsPath).filter(
+        (file) => file.endsWith(".js") || file.endsWith(".ts")
+      );
+    } catch (error) {
+      console.warn(
+        `Attention: Impossible de lire le dossier d'événements ${this.eventsPath}`
+      );
+      return [];
+    }
   }
 
   /**
    * Charge un événement spécifique
+   * @param fileName - Nom du fichier à charger
    */
   private async loadEvent(fileName: string): Promise<void> {
     try {
@@ -65,6 +102,8 @@ export class EventManager {
 
   /**
    * Importe un module d'événement
+   * @param filePath - Chemin complet vers le fichier
+   * @returns Module d'événement importé
    */
   private async importEvent(
     filePath: string
@@ -75,6 +114,8 @@ export class EventManager {
 
   /**
    * Valide et enregistre un événement
+   * @param event - Événement à valider et enregistrer
+   * @param fileName - Nom du fichier pour les logs d'erreur
    */
   private validateAndRegisterEvent(
     event: IEvent<keyof ClientEvents>,
@@ -86,7 +127,9 @@ export class EventManager {
   }
 
   /**
-   * Valide la structure d'un événement
+   * Valide qu'un module est bien un événement conforme
+   * @param event - Module à valider
+   * @param fileName - Nom du fichier pour les messages d'erreur
    */
   private validateEvent(
     event: any,
@@ -103,6 +146,7 @@ export class EventManager {
 
   /**
    * Enregistre un événement auprès du client Discord
+   * @param event - Événement à enregistrer
    */
   private registerEvent<K extends keyof ClientEvents>(event: IEvent<K>): void {
     const listener = (...args: ClientEvents[K]) =>
@@ -116,7 +160,9 @@ export class EventManager {
   }
 
   /**
-   * Exécute un événement avec gestion d'erreur
+   * Exécute un gestionnaire d'événement avec gestion des erreurs
+   * @param event - Événement à exécuter
+   * @param args - Arguments de l'événement passés par Discord.js
    */
   private async executeEvent<K extends keyof ClientEvents>(
     event: IEvent<K>,
@@ -125,12 +171,17 @@ export class EventManager {
     try {
       await event.execute(this.client, ...args);
     } catch (error) {
-      this.handleError(`Erreur lors de l'exécution de ${event.name}`, error);
+      this.handleError(
+        `Erreur lors de l'exécution de l'événement '${event.name}'`,
+        error
+      );
     }
   }
 
   /**
-   * Gestion centralisée des erreurs
+   * Gère les erreurs de manière uniforme
+   * @param message - Message descriptif de l'erreur
+   * @param error - L'erreur à traiter
    */
   private handleError(message: string, error: unknown): void {
     console.error(

@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "discord.js";
 import DiscordClient from "../client/DiscordClient";
-import { ICommand } from "../manager/CommandManager";
+import { ICommand } from "../manager/commandmanager";
 
 const ping: ICommand = {
   data: new SlashCommandBuilder()

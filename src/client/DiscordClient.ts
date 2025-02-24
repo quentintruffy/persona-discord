@@ -1,15 +1,26 @@
-import { ActivityType, Client, Guild, IntentsBitField } from "discord.js";
+/**
+ * Client Discord personnalisé qui gère les événements et les commandes
+ */
+import { ActivityType, Client, IntentsBitField } from "discord.js";
 import "dotenv/config";
-import { CommandManager } from "../manager/CommandManager";
 import { EventManager } from "../manager/EventManager";
-import { GuildType } from "../schemas/GuildSchema";
-import { supabase } from "../utils/supabase";
+import { CommandManager } from "../manager/commandmanager";
 
+/**
+ * Client Discord étendu avec des gestionnaires d'événements et de commandes
+ */
 export default class DiscordClient extends Client {
-  event_manager = new EventManager(this);
-  command_manager = new CommandManager(this);
+  /** Gestionnaire d'événements */
+  public readonly event_manager: EventManager;
 
+  /** Gestionnaire de commandes */
+  public readonly command_manager: CommandManager;
+
+  /**
+   * Crée une nouvelle instance du client Discord personnalisé
+   */
   constructor() {
+    // Configurer le client avec les intents et la présence
     super({
       intents: [
         IntentsBitField.Flags.Guilds,
@@ -28,97 +39,41 @@ export default class DiscordClient extends Client {
         status: "online",
       },
     });
+
+    // Initialiser les gestionnaires après l'appel à super()
+    this.event_manager = new EventManager(this);
+    this.command_manager = new CommandManager(this);
   }
 
-  connect = async () => {
+  /**
+   * Connecte le bot à Discord et charge les événements et commandes
+   */
+  public async connect(): Promise<void> {
     try {
+      console.log("Démarrage du bot Discord...");
+
+      // Charger les événements avant la connexion
       await this.event_manager.loadEvents();
+
+      // Charger les commandes
       await this.command_manager.loadCommands();
 
-      await this.login(process.env.CLIENT_TOKEN);
-      await this.checkGuilds();
-    } catch (err) {
-      console.log("Failed to connect to the Discord bot :", err);
-    }
-  };
-
-  addGuild = async (guild: Guild) => {
-    try {
-      const { data, error } = await supabase.from("guilds").insert([
-        {
-          id: guild.id,
-          created_at: new Date(),
-        },
-      ]);
-
-      if (error) {
-        console.error("Failed to add guild to the database :", error);
-      }
-    } catch (err) {
-      console.log("Failed to add guild to the database :", err);
-    }
-  };
-
-  addGuilds = async (guilds: GuildType[]) => {
-    try {
-      const { data, error } = await supabase.from("guilds").insert(guilds);
-
-      if (error) {
-        console.error("Failed to add guilds to the database :", error);
-      }
-    } catch (err) {
-      console.log("Failed to add guilds to the database :", err);
-    }
-  };
-
-  removeGuild = async (guild: Guild) => {
-    try {
-      const { data, error } = await supabase.from("guilds").delete().match({
-        id: guild.id,
-      });
-      if (error) {
-        console.error("Failed to remove guild from the database :", error);
-      }
-    } catch (err) {
-      console.log("Failed to remove guild from the database :", err);
-    }
-  };
-
-  // Check for all guilds if they are in the database or not and add them if they are not
-  checkGuilds = async () => {
-    try {
-      // Récupère uniquement les nouveaux guilds en une seule requête
-      const { data: existingGuilds, error } = await supabase
-        .from("guilds")
-        .select("id")
-        .in(
-          "id",
-          this.guilds.cache.map((guild) => guild.id)
+      // Se connecter à Discord avec le token
+      const token = process.env.CLIENT_TOKEN;
+      if (!token) {
+        throw new Error(
+          "CLIENT_TOKEN n'est pas défini dans les variables d'environnement"
         );
-
-      if (error) {
-        throw new Error(`Database query failed: ${error.message}`);
       }
 
-      // Optimisation avec Map pour une recherche O(1)
-      const existingGuildMap = new Map(
-        existingGuilds?.map((g) => [g.id, true]) || []
+      await this.login(token);
+      console.log("✓ Bot connecté à Discord avec succès");
+    } catch (err) {
+      console.error(
+        "Échec de la connexion du bot Discord :",
+        err instanceof Error ? err.message : err
       );
-
-      // Filtre directement pendant l'itération du cache
-      const newGuilds = Array.from(this.guilds.cache)
-        .filter(([id]) => !existingGuildMap.has(id))
-        .map(([id]) => ({
-          id,
-          created_at: new Date(),
-        }));
-
-      if (newGuilds.length > 0) {
-        // Utilisation de .upsert pour éviter les doublons potentiels
-        await supabase.from("guilds").upsert(newGuilds, { onConflict: "id" });
-      }
-    } catch (error) {
-      console.error("Guild synchronization failed:", error);
+      process.exit(1); // Quitter le processus en cas d'échec critique
     }
-  };
+  }
 }

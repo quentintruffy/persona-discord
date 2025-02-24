@@ -15,6 +15,8 @@ const ready: IEvent<Events.ClientReady> = {
     // - Charger des données depuis une base de données
     // - Initialiser des systèmes
     // - Mettre en place des tâches planifiées
+
+    await client.command_manager.deployCommandsGlobally();
   },
 };
 
