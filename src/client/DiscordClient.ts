@@ -5,6 +5,7 @@ import { ActivityType, Client, IntentsBitField } from "discord.js";
 import "dotenv/config";
 import { EventManager } from "../manager/EventManager";
 import { CommandManager } from "../manager/commandmanager";
+import { ModuleManager } from "../manager/modulemanager";
 
 /**
  * Client Discord étendu avec des gestionnaires d'événements et de commandes
@@ -15,6 +16,9 @@ export default class DiscordClient extends Client {
 
   /** Gestionnaire de commandes */
   public readonly command_manager: CommandManager;
+
+  /** Gestionnaire de modules */
+  public readonly module_manager: ModuleManager;
 
   /**
    * Crée une nouvelle instance du client Discord personnalisé
@@ -43,6 +47,7 @@ export default class DiscordClient extends Client {
     // Initialiser les gestionnaires après l'appel à super()
     this.event_manager = new EventManager(this);
     this.command_manager = new CommandManager(this);
+    this.module_manager = new ModuleManager(this);
   }
 
   /**
@@ -57,6 +62,9 @@ export default class DiscordClient extends Client {
 
       // Charger les commandes
       await this.command_manager.loadCommands();
+
+      // Charger les modules
+      await this.module_manager.loadModules();
 
       // Se connecter à Discord avec le token
       const token = process.env.CLIENT_TOKEN;
