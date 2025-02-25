@@ -36,4 +36,39 @@ export default {
    * Par défaut: 0
    */
   defaultUserLimit: 0,
+
+  /**
+   * Système de persistance pour les salons privés
+   * Si true, les associations utilisateur -> salon seront sauvegardées
+   * lors d'un redémarrage du bot (via JSON ou base de données)
+   * Par défaut: false
+   */
+  persistentChannels: false,
+
+  /**
+   * Salon textuel où envoyer les notifications de création/suppression
+   * Laissez vide pour désactiver
+   * Exemple: "123456789012345678"
+   */
+  notificationChannelId: "",
+
+  /**
+   * Permissions par défaut pour le créateur du salon
+   * Ce sont les permissions accordées automatiquement au créateur
+   */
+  creatorPermissions: [
+    "Connect", // Rejoindre le salon
+    "ViewChannel", // Voir le salon
+    "ManageChannels", // Gérer le salon (renommer, etc.)
+    "MuteMembers", // Rendre muet
+    "DeafenMembers", // Rendre sourd
+    "MoveMembers", // Déplacer des membres
+  ],
+
+  /**
+   * Limite de salons privés par utilisateur
+   * 0 = pas de limite
+   * Par défaut: 1
+   */
+  maxChannelsPerUser: 1,
 };

@@ -9,6 +9,20 @@ const autoReactModule: IModule = {
   description: "Module d'auto-réaction pour les messages.",
   version: "1.0.0",
   enabled: true,
+  data: {
+    hellowords: [
+      "coucou",
+      "bonjour",
+      "salut",
+      "hey",
+      "hi",
+      "hello",
+      "yo",
+      "sup",
+      "what's up",
+      "bjr",
+    ],
+  },
 
   // Fonction d'initialisation appelée lors du chargement du module
   init: async (client: DiscordClient) => {

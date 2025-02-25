@@ -9,6 +9,8 @@ import {
   RESTPostAPIChatInputApplicationCommandsJSONBody,
   Routes,
   SlashCommandBuilder,
+  SlashCommandOptionsOnlyBuilder,
+  SlashCommandSubcommandsOnlyBuilder,
 } from "discord.js";
 import { readdirSync } from "fs";
 import { join } from "path";
@@ -21,7 +23,9 @@ export type ICommand = {
   /** Métadonnées de la commande utilisées par Discord */
   data:
     | SlashCommandBuilder
-    | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">;
+    | SlashCommandOptionsOnlyBuilder
+    | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">
+    | SlashCommandSubcommandsOnlyBuilder;
 
   /** Fonction exécutée lorsque la commande est invoquée */
   execute: (
