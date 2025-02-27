@@ -1,0 +1,33 @@
+{
+  "name": "persona-discord",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "shard": "node dist/shard.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quentintruffy/persona-discord.git"
+  },
+  "keywords": [],
+  "author": "QuentinSpace",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/quentintruffy/persona-discord/issues"
+  },
+  "homepage": "https://github.com/quentintruffy/persona-discord#readme",
+  "description": "",
+  "dependencies": {
+    "discord.js": "^14.18.0",
+    "dotenv": "^16.4.7",
+    "typescript": "^5.7.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "prettier": "3.5.2",
+    "tsx": "^4.19.3"
+  }
+}
