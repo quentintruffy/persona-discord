@@ -3,11 +3,13 @@ import 'dotenv/config';
 import { CommandManager } from './managers/commandmanager';
 import { EventManager } from './managers/eventmanager';
 import { ModuleManager } from './managers/modulemanager';
+import { GuildService } from './services/GuildService';
 
 export default class DiscordClient extends Client {
   public readonly event_manager: EventManager;
   public readonly command_manager: CommandManager;
   public readonly module_manager: ModuleManager;
+  public readonly guild_service: GuildService;
 
   constructor() {
     super({
@@ -32,10 +34,23 @@ export default class DiscordClient extends Client {
     this.event_manager = new EventManager(this);
     this.command_manager = new CommandManager(this);
     this.module_manager = new ModuleManager(this);
+    this.guild_service = new GuildService();
   }
 
   public async connect(): Promise<void> {
     try {
+      // Verifier les variables d'environnement
+      if (!process.env.CLIENT_ID || !process.env.CLIENT_TOKEN) {
+        throw new Error(
+          "Les variables d'environnement CLIENT_ID et CLIENT_TOKEN sont requises",
+        );
+      }
+      if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
+        throw new Error(
+          "Les variables d'environnement SUPABASE_URL et SUPABASE_KEY sont requises",
+        );
+      }
+
       console.log(
         `[Shard ${this.shard?.ids[0] ?? 0}] Démarrage du bot Discord...`,
       );
