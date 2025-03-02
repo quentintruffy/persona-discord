@@ -6,7 +6,8 @@
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "shard": "node dist/shard.js"
+    "shard": "node dist/shard.js",
+    "supabase:types": "supabase gen types typescript --local > ./src/schemas/database.types.ts"
   },
   "repository": {
     "type": "git",
