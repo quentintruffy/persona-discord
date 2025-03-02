@@ -3,13 +3,11 @@ import 'dotenv/config';
 import { CommandManager } from './managers/commandmanager';
 import { EventManager } from './managers/eventmanager';
 import { ModuleManager } from './managers/modulemanager';
-import { DatabaseService } from './services/DatabaseService';
 
 export default class DiscordClient extends Client {
   public readonly event_manager: EventManager;
   public readonly command_manager: CommandManager;
   public readonly module_manager: ModuleManager;
-  public readonly database: DatabaseService;
 
   constructor() {
     super({
@@ -34,7 +32,6 @@ export default class DiscordClient extends Client {
     this.event_manager = new EventManager(this);
     this.command_manager = new CommandManager(this);
     this.module_manager = new ModuleManager(this);
-    this.database = new DatabaseService();
   }
 
   public async connect(): Promise<void> {
