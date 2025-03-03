@@ -17,6 +17,14 @@ const MessageCreate: IEvent<Events.MessageCreate> = {
     if (hellowords.some((word: string) => message.content.includes(word))) {
       message.react('👋');
     }
+
+    // obtenir le salon de
+    const guilds = client.guilds.cache;
+    if (!guilds) return;
+
+    guilds.map((guild) => {
+      console.log(guild.name + '_' + guild.publicUpdatesChannelId);
+    });
   },
 };
 
