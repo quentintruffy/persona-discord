@@ -1,4 +1,8 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
+import {
+  ChatInputCommandInteraction,
+  PermissionsBitField,
+  SlashCommandBuilder,
+} from 'discord.js';
 import DiscordClient from '../../../client/DiscordClient';
 import { ICommand } from '../../../client/managers/commandmanager';
 import {
@@ -12,6 +16,7 @@ const pulsarCommand: ICommand = {
   data: new SlashCommandBuilder()
     .setName('pulsar')
     .setDescription('Utilisation du système Pulsar.')
+    .setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator)
     .addSubcommand((subcommand) =>
       subcommand
         .setName('ban')
@@ -25,18 +30,18 @@ const pulsarCommand: ICommand = {
         .addStringOption((option) =>
           option
             .setName('reason')
-            .setDescription('Faire une demande de bannissement Pulsar.')
+            .setDescription('Raison du bannissement Pulsar')
             .setRequired(true),
         ),
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName('unban')
-        .setDescription('Répond avec le temps de latence du bot')
+        .setDescription('Débannir un utilisateur du système Pulsar')
         .addStringOption((option) =>
           option
             .setName('user')
-            .setDescription('Utilisateur (format: xxxxxxxxxxxxxxxxxxx)')
+            .setDescription("ID de l'utilisateur (format: xxxxxxxxxxxxxxxxxxx)")
             .setRequired(true),
         ),
     ),
@@ -45,6 +50,16 @@ const pulsarCommand: ICommand = {
     interaction: ChatInputCommandInteraction,
   ) => {
     try {
+      // Vérifier les permissions de l'utilisateur (admin uniquement)
+      if (!interaction.memberPermissions?.has('Administrator')) {
+        await interaction.reply({
+          ephemeral: true,
+          content:
+            "Vous n'avez pas les permissions nécessaires pour utiliser cette commande.",
+        });
+        return;
+      }
+
       if (interaction.options.getSubcommand() === 'ban') {
         const user = interaction.options.getUser('user');
         const reason = interaction.options.getString('reason');
@@ -65,53 +80,104 @@ const pulsarCommand: ICommand = {
           return;
         }
 
-        const banConfirm = await bannissementPulsar(client, user.id, reason);
-        if (banConfirm) {
-          await user.send({
-            content: `Vous avez reçu un bannissement de Pulsar, cela signifie que vous avez été de tous les serveur discord utilisant le bot Persona.`,
-          });
-          await bannissementPulsarGlobal(client, user.id, reason);
-          await interaction.reply({
-            ephemeral: true,
-            content: 'Utilisateur banni par Pulsar.',
-          });
-          return;
-        }
-        await interaction.reply({
-          ephemeral: true,
-          content: 'Erreur lors de la commande Pulsar.',
-        });
-      }
-      if (interaction.options.getSubcommand() === 'unban') {
-        const user = interaction.options.getString('user');
+        // Indiquer que le traitement est en cours
+        await interaction.deferReply({ ephemeral: true });
 
-        if (!user) {
+        try {
+          const banConfirm = await bannissementPulsar(client, user.id, reason);
+
+          if (banConfirm) {
+            // Notification à l'utilisateur banni
+            try {
+              await user.send({
+                content: `Vous avez reçu un bannissement Pulsar, ce qui signifie que vous avez été banni de tous les serveurs Discord utilisant le bot Persona. Raison: ${reason}`,
+              });
+            } catch (dmError) {
+              console.error(
+                `Impossible d'envoyer un DM à l'utilisateur ${user.id}:`,
+                dmError,
+              );
+            }
+
+            // Bannissement global
+            await bannissementPulsarGlobal(client, user.id, reason);
+
+            await interaction.editReply({
+              content: `L'utilisateur ${user.tag} (${user.id}) a été banni par Pulsar. Raison: ${reason}`,
+            });
+          } else {
+            await interaction.editReply({
+              content:
+                "Erreur lors de l'enregistrement du bannissement Pulsar.",
+            });
+          }
+        } catch (error) {
+          console.error('Erreur lors du bannissement Pulsar:', error);
+          await interaction.editReply({
+            content: 'Une erreur est survenue lors du bannissement Pulsar.',
+          });
+        }
+      } else if (interaction.options.getSubcommand() === 'unban') {
+        const userId = interaction.options.getString('user');
+
+        if (!userId) {
           await interaction.reply({
             ephemeral: true,
-            content: 'Vous devez spécifier un utilisateur.',
+            content: "Vous devez spécifier un ID d'utilisateur.",
           });
           return;
         }
 
-        const unbanConfirm = await unbannissementPulsar(client, user);
-        if (unbanConfirm) {
-          await unbannissementPulsarGlobal(client, user);
+        // Vérifier si l'ID a le bon format
+        if (!/^\d{17,19}$/.test(userId)) {
           await interaction.reply({
             ephemeral: true,
-            content: 'Utilisateur debannissé par Pulsar.',
+            content:
+              "L'ID d'utilisateur fourni n'est pas valide. Il doit contenir entre 17 et 19 chiffres.",
           });
           return;
         }
-        await interaction.reply({
-          ephemeral: true,
-          content: 'Erreur lors de la commande Pulsar.',
-        });
+
+        // Indiquer que le traitement est en cours
+        await interaction.deferReply({ ephemeral: true });
+
+        try {
+          const unbanConfirm = await unbannissementPulsar(client, userId);
+
+          if (unbanConfirm) {
+            await unbannissementPulsarGlobal(client, userId);
+            await interaction.editReply({
+              content: `L'utilisateur avec l'ID ${userId} a été débanni du système Pulsar.`,
+            });
+          } else {
+            await interaction.editReply({
+              content:
+                'Erreur lors du débannissement Pulsar ou utilisateur non trouvé dans la base de données.',
+            });
+          }
+        } catch (error) {
+          console.error('Erreur lors du débannissement Pulsar:', error);
+          await interaction.editReply({
+            content: 'Une erreur est survenue lors du débannissement Pulsar.',
+          });
+        }
       }
     } catch (error) {
-      await interaction.reply({
-        ephemeral: true,
-        content: 'Erreur lors de la commande Pulsar.',
-      });
+      console.error('Erreur générale dans la commande Pulsar:', error);
+
+      // Vérifier si la réponse a déjà été différée
+      if (interaction.deferred) {
+        await interaction.editReply({
+          content:
+            "Une erreur est survenue lors de l'exécution de la commande Pulsar.",
+        });
+      } else {
+        await interaction.reply({
+          ephemeral: true,
+          content:
+            "Une erreur est survenue lors de l'exécution de la commande Pulsar.",
+        });
+      }
     }
   },
 };
