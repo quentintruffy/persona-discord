@@ -4,12 +4,16 @@ import { CommandManager } from './managers/commandmanager';
 import { EventManager } from './managers/eventmanager';
 import { ModuleManager } from './managers/modulemanager';
 import { GuildService } from './services/GuildService';
+import { MemberService } from './services/MemberService';
+import { PulsarPunishmentService } from './services/PulsarPunishment';
 
 export default class DiscordClient extends Client {
   public readonly event_manager: EventManager;
   public readonly command_manager: CommandManager;
   public readonly module_manager: ModuleManager;
   public readonly guild_service: GuildService;
+  public readonly member_service: MemberService;
+  public readonly pulsar_punishment_service: PulsarPunishmentService;
 
   constructor() {
     super({
@@ -19,6 +23,7 @@ export default class DiscordClient extends Client {
         IntentsBitField.Flags.GuildMembers,
         IntentsBitField.Flags.MessageContent,
         IntentsBitField.Flags.GuildVoiceStates,
+        IntentsBitField.Flags.DirectMessages,
       ],
       presence: {
         activities: [
@@ -35,6 +40,8 @@ export default class DiscordClient extends Client {
     this.command_manager = new CommandManager(this);
     this.module_manager = new ModuleManager(this);
     this.guild_service = new GuildService();
+    this.member_service = new MemberService();
+    this.pulsar_punishment_service = new PulsarPunishmentService();
   }
 
   public async connect(): Promise<void> {

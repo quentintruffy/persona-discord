@@ -19,3 +19,13 @@ CREATE TABLE IF NOT EXISTS "public"."guild_configs" (
 );
 ALTER TABLE "public"."guild_configs" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Enable read access for all users" ON "public"."guild_configs" USING (true);
+
+
+-- Table des membres
+CREATE TABLE IF NOT EXISTS "public"."pulsar_punishments" (
+    "user_id" text NOT NULL PRIMARY KEY,
+    "reason" text NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+ALTER TABLE "public"."pulsar_punishments" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable read access for all users" ON "public"."pulsar_punishments" USING (true);
