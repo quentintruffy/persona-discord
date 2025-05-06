@@ -139,6 +139,36 @@ export class CommandManager {
   }
 
   /**
+   * Ajoute manuellement une commande à la collection
+   * @param command - La commande à ajouter
+   * @returns true si la commande a été ajoutée, false si elle existait déjà
+   */
+  public addCommand(command: ICommand): boolean {
+    try {
+      // Vérifier si la commande existe déjà
+      if (this.commands.has(command.data.name)) {
+        console.warn(
+          `La commande "${command.data.name}" existe déjà et sera remplacée.`,
+        );
+      }
+
+      // Valider la commande
+      this.validateCommand(command, command.data.name);
+
+      // Ajouter la commande à la collection
+      this.commands.set(command.data.name, command);
+
+      return true;
+    } catch (error) {
+      this.handleError(
+        `Erreur lors de l'ajout de la commande ${command.data.name}`,
+        error,
+      );
+      return false;
+    }
+  }
+
+  /**
    * Gère les erreurs de manière uniforme
    * @param message - Message descriptif de l'erreur
    * @param error - L'erreur à traiter

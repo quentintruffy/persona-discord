@@ -1,18 +1,24 @@
-import { ActivityType, Client } from 'discord.js';
+import { ActivityType, Client, IntentsBitField } from 'discord.js';
 import { CommandManager } from './handlers/command-handler';
 import { EventManager } from './handlers/event-handler';
+import { ModuleManager } from './handlers/module-handler';
 import { RedisManager } from './managers/redis-manager';
 import { SupabaseManager } from './managers/supabase-manager';
 
 export default class DiscordClient extends Client {
   public readonly event_manager: EventManager;
   public readonly command_manager: CommandManager;
+  public readonly module_manager: ModuleManager;
   public readonly supabase_manager: SupabaseManager;
   public readonly redis_manager: RedisManager;
 
   constructor() {
     super({
-      intents: [],
+      intents: [
+        IntentsBitField.Flags.Guilds,
+        IntentsBitField.Flags.GuildMessages,
+        IntentsBitField.Flags.MessageContent,
+      ],
       presence: {
         activities: [
           {
@@ -25,6 +31,7 @@ export default class DiscordClient extends Client {
     });
     this.event_manager = new EventManager(this);
     this.command_manager = new CommandManager(this);
+    this.module_manager = new ModuleManager(this);
     this.supabase_manager = new SupabaseManager(this);
     this.redis_manager = new RedisManager(this);
   }
@@ -48,6 +55,9 @@ export default class DiscordClient extends Client {
 
       // Charger les commandes
       await this.command_manager.loadCommands();
+
+      // Charger les modules
+      await this.module_manager.loadModules();
 
       // Connexion au Discord
       await this.login(process.env.CLIENT_TOKEN);
