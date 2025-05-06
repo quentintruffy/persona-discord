@@ -2,6 +2,8 @@ import {
   ChatInputCommandInteraction,
   Collection,
   REST,
+  RESTPostAPIChatInputApplicationCommandsJSONBody,
+  Routes,
   SlashCommandBuilder,
   SlashCommandOptionsOnlyBuilder,
   SlashCommandSubcommandsOnlyBuilder,
@@ -165,6 +167,157 @@ export class CommandManager {
         error,
       );
       return false;
+    }
+  }
+
+  /**
+   * Convertit toutes les commandes ou un sous-ensemble en format JSON pour l'API Discord
+   * @param commandNames - Liste facultative des noms de commandes à convertir (toutes si non spécifié)
+   * @returns Tableau de commandes au format JSON
+   */
+  private getCommandsAsJSON(
+    commandNames?: string[],
+  ): RESTPostAPIChatInputApplicationCommandsJSONBody[] {
+    try {
+      const commandsToConvert = commandNames
+        ? this.commands.filter((_, name) => commandNames.includes(name))
+        : this.commands;
+
+      return [...commandsToConvert.values()].map((cmd) => cmd.data.toJSON());
+    } catch (error) {
+      this.handleError(
+        'Erreur lors de la conversion des commandes en JSON',
+        error,
+      );
+      return [];
+    }
+  }
+
+  /**
+   * Déploie les commandes sur une guilde spécifique
+   * @param guildId - ID de la guilde où déployer les commandes
+   * @param commandNames - Liste facultative des noms de commandes à déployer
+   * @returns Nombre de commandes déployées
+   */
+  public async deployCommandsToGuild(
+    guildId: string,
+    commandNames?: string[],
+  ): Promise<number> {
+    try {
+      if (!this.client.application?.id) {
+        throw new Error("L'ID de l'application n'est pas disponible");
+      }
+
+      const commands = this.getCommandsAsJSON(commandNames);
+      if (commands.length === 0) {
+        console.warn('Aucune commande à déployer');
+        return 0;
+      }
+
+      console.log(
+        `Déploiement de ${commands.length} commandes sur la guilde ${guildId}...`,
+      );
+
+      const data = (await this.rest.put(
+        Routes.applicationGuildCommands(this.client.application.id, guildId),
+        { body: commands },
+      )) as any[];
+
+      console.log(
+        `✓ ${data.length} commandes déployées avec succès sur la guilde ${guildId}`,
+      );
+      return data.length;
+    } catch (error) {
+      this.handleError(
+        `Erreur lors du déploiement des commandes sur la guilde ${guildId}`,
+        error,
+      );
+      return 0;
+    }
+  }
+
+  /**
+   * Déploie les commandes sur plusieurs guildes
+   * @param guildIds - Liste des IDs de guildes où déployer les commandes
+   * @param commandNames - Liste facultative des noms de commandes à déployer
+   * @returns Map des guildes avec le nombre de commandes déployées pour chacune
+   */
+  public async deployCommandsToGuilds(
+    guildIds: string[],
+    commandNames?: string[],
+  ): Promise<Map<string, number>> {
+    const results = new Map<string, number>();
+
+    for (const guildId of guildIds) {
+      try {
+        const deployed = await this.deployCommandsToGuild(
+          guildId,
+          commandNames,
+        );
+        results.set(guildId, deployed);
+      } catch (error) {
+        this.handleError(
+          `Erreur lors du déploiement sur la guilde ${guildId}`,
+          error,
+        );
+        results.set(guildId, 0);
+      }
+    }
+
+    // Afficher un résumé
+    let totalSuccess = 0;
+    let totalFailed = 0;
+
+    results.forEach((count, guildId) => {
+      if (count > 0) {
+        totalSuccess++;
+      } else {
+        totalFailed++;
+      }
+    });
+
+    console.log(
+      `Déploiement terminé : ${totalSuccess} guildes avec succès, ${totalFailed} échecs`,
+    );
+    return results;
+  }
+
+  /**
+   * Déploie les commandes globalement (pour toutes les guildes)
+   * @param commandNames - Liste facultative des noms de commandes à déployer
+   * @returns Nombre de commandes déployées
+   */
+  public async deployCommandsGlobally(
+    commandNames?: string[],
+  ): Promise<number> {
+    try {
+      if (!this.client.application?.id) {
+        throw new Error("L'ID de l'application n'est pas disponible");
+      }
+
+      const commands = this.getCommandsAsJSON(commandNames);
+      if (commands.length === 0) {
+        console.warn('Aucune commande à déployer');
+        return 0;
+      }
+
+      console.log(`Déploiement global de ${commands.length} commandes...`);
+
+      const data = (await this.rest.put(
+        Routes.applicationCommands(this.client.application.id),
+        { body: commands },
+      )) as any[];
+
+      console.log(
+        `✓ ${data.length} commandes déployées globalement avec succès`,
+      );
+      return data.length;
+    } catch (error) {
+      this.handleError(
+        'Erreur lors du déploiement global des commandes',
+        error,
+      );
+      return 0;
     }
   }
 

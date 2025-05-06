@@ -2,6 +2,7 @@ import { ActivityType, Client, IntentsBitField } from 'discord.js';
 import { CommandManager } from './handlers/command-handler';
 import { EventManager } from './handlers/event-handler';
 import { ModuleManager } from './handlers/module-handler';
+import { DataManager } from './managers/data-manager';
 import { RedisManager } from './managers/redis-manager';
 import { SupabaseManager } from './managers/supabase-manager';
 
@@ -11,6 +12,7 @@ export default class DiscordClient extends Client {
   public readonly module_manager: ModuleManager;
   public readonly supabase_manager: SupabaseManager;
   public readonly redis_manager: RedisManager;
+  public readonly data_manager: DataManager;
 
   constructor() {
     super({
@@ -34,6 +36,7 @@ export default class DiscordClient extends Client {
     this.module_manager = new ModuleManager(this);
     this.supabase_manager = new SupabaseManager(this);
     this.redis_manager = new RedisManager(this);
+    this.data_manager = new DataManager(this);
   }
 
   public async connect(): Promise<void> {
@@ -61,6 +64,8 @@ export default class DiscordClient extends Client {
 
       // Connexion au Discord
       await this.login(process.env.CLIENT_TOKEN);
+
+      // await this.command_manager.deployCommandsGlobally();
     } catch (err) {
       throw err;
     }

@@ -190,10 +190,6 @@ export class ModuleManager {
         const filePath = join(commandsPath, file);
         const command: ICommand = await this.importCommand(filePath);
 
-        // Ajouter le préfixe du module à la description de la commande
-        const originalDescription = command.data.description;
-        command.data.setDescription(`[${moduleName}] ${originalDescription}`);
-
         // Enregistrer la commande dans le gestionnaire de commandes
         this.client.command_manager.addCommand(command);
       }
