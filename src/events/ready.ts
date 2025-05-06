@@ -1,6 +1,6 @@
 import { Events } from 'discord.js';
 import DiscordClient from '../client/discord-client';
-import { IEvent } from '../handlers/event-handler';
+import { IEvent } from '../client/handlers/event-handler';
 
 const ready: IEvent<Events.ClientReady> = {
   name: Events.ClientReady,
