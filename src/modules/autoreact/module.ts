@@ -22,6 +22,7 @@ const autoReactModule: IModule = {
       'sup',
       "what's up",
       'bjr',
+      'cc',
     ],
   },
 

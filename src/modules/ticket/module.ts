@@ -1,23 +1,20 @@
 /**
- * Module de modération Pulsar.
+ * Module de modération Ticket.
  */
 
 import DiscordClient from '../../client/discord-client';
 import { IModule } from '../../client/handlers/module-handler';
 
-const pulsarModule: IModule = {
-  name: 'Pulsar',
-  description: 'Module de modération Pulsar.',
+const ticketModule: IModule = {
+  name: 'Ticket',
+  description: 'Module de modération Ticket.',
   version: '1.0.0',
   enabled: true,
-  data: {
-    GUILD_RAPPORT_ID: '1212592117185126440',
-    CHANNEL_RAPPORT_ID: '1368984020951760966',
-  },
+  data: {},
 
   // Fonction d'initialisation appelée lors du chargement du module
   init: async (client: DiscordClient) => {
-    console.log('Initialisation du module Pulsar...');
+    console.log('Initialisation du module Ticket...');
 
     // Vous pouvez faire des initialisations spécifiques ici, comme :
     // - Charger des données depuis une base de données
@@ -27,7 +24,7 @@ const pulsarModule: IModule = {
 
   // Fonction de nettoyage appelée lors de la désactivation du module
   cleanup: async (client: DiscordClient) => {
-    console.log('Nettoyage du module Pulsar...');
+    console.log('Nettoyage du module Ticket...');
 
     // Vous pouvez effectuer des opérations de nettoyage, comme :
     // - Fermer des connexions de base de données
@@ -36,4 +33,4 @@ const pulsarModule: IModule = {
   },
 };
 
-export default pulsarModule;
+export default ticketModule;
